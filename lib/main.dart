@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:slang_retail_assistant/slang_retail_assistant.dart';
 
 void main() {
@@ -17,6 +20,9 @@ class _MyAppState extends State<MyApp>
     implements RetailAssistantAction, RetailAssistantLifeCycleObserver {
   String _searchText = '';
   late SearchUserJourney _searchUserJourney;
+  String ASSISTANT_ID = "";
+  String API_KEY = "";
+  String scanRes = "";
 
   @override
   void initState() {
@@ -24,10 +30,14 @@ class _MyAppState extends State<MyApp>
     initSlangRetailAssistant();
   }
 
-  void initSlangRetailAssistant() {
+  void initSlangRetailAssistant() async {
+    final prefs = await SharedPreferences.getInstance();
+    ASSISTANT_ID = prefs.getString('ASSISTANT_ID') ?? "x";
+    API_KEY = prefs.getString('API_KEY') ?? "x";
+
     var assistantConfig = new AssistantConfiguration()
-      ..assistantId = "AssistantId"
-      ..apiKey = "APIKey";
+      ..assistantId = ASSISTANT_ID
+      ..apiKey = API_KEY;
 
     SlangRetailAssistant.initialize(assistantConfig);
     SlangRetailAssistant.setAction(this);
@@ -56,6 +66,33 @@ class _MyAppState extends State<MyApp>
     return SearchAppState.WAITING;
   }
 
+  Future<void> scanQR() async {
+    String barcodeScanRes;
+    // Platform messages may fail, so we use a try/catch PlatformException.
+    try {
+      barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
+          '#ff6666', 'Cancel', true, ScanMode.QR);
+      print(barcodeScanRes);
+    } on PlatformException {
+      barcodeScanRes = 'Failed to get platform version.';
+    }
+
+    // If the widget was removed from the tree while the asynchronous platform
+    // message was in flight, we want to discard the reply rather than calling
+    // setState to update our non-existent appearance.
+    if (!mounted) return;
+    final prefs = await SharedPreferences.getInstance();
+
+    print(barcodeScanRes);
+    setState(() {
+      scanRes = barcodeScanRes;
+      List<String> list = scanRes.split(':').toList();
+      prefs.setString('ASSISTANT_ID', list[1]);
+      prefs.setString('API_KEY', list[2]);
+      initSlangRetailAssistant();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     SlangRetailAssistant.getUI().showTrigger();
@@ -78,7 +115,7 @@ class _MyAppState extends State<MyApp>
                   ),
                   color: Colors.blueAccent,
                   textColor: Colors.white,
-                  onPressed: () {},
+                  onPressed: () => scanQR(),
                 ),
                 Container(height: 16), // set height
                 FlatButton(
