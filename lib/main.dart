@@ -23,11 +23,129 @@ class _MyAppState extends State<MyApp>
   String ASSISTANT_ID = "";
   String API_KEY = "";
   String scanRes = "";
+  bool? showScanQRButton;
 
   @override
   void initState() {
     super.initState();
+    getIsFirstScan();
     initSlangRetailAssistant();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    SlangRetailAssistant.getUI().showTrigger();
+    return MaterialApp(
+        home: Scaffold(
+      appBar: AppBar(
+        title: const Text('Flutter Example App'),
+      ),
+      body: showScanQRButton == null
+          // Still fetching info from sharedPref
+          ? circularProgress()
+          : (showScanQRButton == true)
+              ? scanQRButton()
+              : mainContent(),
+    ));
+  }
+
+  Widget scanQRButton() {
+    return Center(
+      child: FlatButton(
+        minWidth: 50.0,
+        height: 50.0,
+        child: Text(
+          'Scan QR Code',
+          style: TextStyle(fontSize: 20.0),
+        ),
+        color: Colors.blueAccent,
+        textColor: Colors.white,
+        onPressed: () {
+          scanQR();
+        },
+      ),
+    );
+  }
+
+  Widget circularProgress() {
+    return Center(
+      child: CircularProgressIndicator(),
+    );
+  }
+
+  Widget mainContent() {
+    return Center(
+        child: Column(
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        Container(height: 16), // set height
+        FlatButton(
+          minWidth: 50.0,
+          height: 50.0,
+          child: Text(
+            'Show Trigger',
+            style: TextStyle(fontSize: 20.0),
+          ),
+          color: Colors.blueAccent,
+          textColor: Colors.white,
+          onPressed: () {
+            SlangRetailAssistant.getUI().showTrigger();
+          },
+        ),
+        Container(height: 16), // set height
+        FlatButton(
+          minWidth: 50.0,
+          height: 50.0,
+          child: Text(
+            'Hide Trigger',
+            style: TextStyle(fontSize: 20.0),
+          ),
+          color: Colors.blueAccent,
+          textColor: Colors.white,
+          onPressed: () {
+            SlangRetailAssistant.getUI().hideTrigger();
+          },
+        ),
+        Container(height: 16), // set height
+        FlatButton(
+          minWidth: 50.0,
+          height: 50.0,
+          child: Text(
+            'Clear Search Context',
+            style: TextStyle(fontSize: 20.0),
+          ),
+          color: Colors.blueAccent,
+          textColor: Colors.white,
+          onPressed: () {
+            SearchUserJourney.getContext().clear();
+          },
+        ),
+        Container(height: 16), // set height
+        Flexible(
+            child: FractionallySizedBox(
+                widthFactor: 0.9,
+                heightFactor: 0.98,
+                child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Container(
+                      height: MediaQuery.of(context).size.height,
+                      decoration: new BoxDecoration(
+                        shape: BoxShape.rectangle,
+                        color: Colors.black,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(
+                          '$_searchText\n',
+                          style: TextStyle(
+                              fontSize: 20.0,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
+                        ),
+                      ),
+                    ))))
+      ],
+    ));
   }
 
   void initSlangRetailAssistant() async {
@@ -49,9 +167,19 @@ class _MyAppState extends State<MyApp>
     print("AssistantError " + assistantError.toString());
   }
 
+  Future<bool> getIsFirstScan() async {
+    final prefs = await SharedPreferences.getInstance();
+    bool status = (prefs.getString('ASSISTANT_ID') == null);
+    setState(() {
+      showScanQRButton = status;
+    });
+    return status;
+  }
+
   @override
   SearchAppState onSearch(
       SearchInfo searchInfo, SearchUserJourney searchUserJourney) {
+    print('onSearch');
     _searchUserJourney = searchUserJourney;
     setState(() {
       try {
@@ -73,6 +201,9 @@ class _MyAppState extends State<MyApp>
       barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
           '#ff6666', 'Cancel', true, ScanMode.QR);
       print(barcodeScanRes);
+      // setState(() {
+      //   showLoading = true;
+      // });
     } on PlatformException {
       barcodeScanRes = 'Failed to get platform version.';
     }
@@ -91,100 +222,6 @@ class _MyAppState extends State<MyApp>
       prefs.setString('API_KEY', list[2]);
       initSlangRetailAssistant();
     });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    SlangRetailAssistant.getUI().showTrigger();
-    return MaterialApp(
-        home: Scaffold(
-            appBar: AppBar(
-              title: const Text('Flutter example app'),
-            ),
-            body: Center(
-                child: Column(
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Container(height: 16), // set height
-                FlatButton(
-                  minWidth: 50.0,
-                  height: 50.0,
-                  child: Text(
-                    'Scan QR Code',
-                    style: TextStyle(fontSize: 20.0),
-                  ),
-                  color: Colors.blueAccent,
-                  textColor: Colors.white,
-                  onPressed: () => scanQR(),
-                ),
-                Container(height: 16), // set height
-                FlatButton(
-                  minWidth: 50.0,
-                  height: 50.0,
-                  child: Text(
-                    'Show Trigger',
-                    style: TextStyle(fontSize: 20.0),
-                  ),
-                  color: Colors.blueAccent,
-                  textColor: Colors.white,
-                  onPressed: () {
-                    SlangRetailAssistant.getUI().showTrigger();
-                  },
-                ),
-                Container(height: 16), // set height
-                FlatButton(
-                  minWidth: 50.0,
-                  height: 50.0,
-                  child: Text(
-                    'Hide Trigger',
-                    style: TextStyle(fontSize: 20.0),
-                  ),
-                  color: Colors.blueAccent,
-                  textColor: Colors.white,
-                  onPressed: () {
-                    SlangRetailAssistant.getUI().hideTrigger();
-                  },
-                ),
-                Container(height: 16), // set height
-                FlatButton(
-                  minWidth: 50.0,
-                  height: 50.0,
-                  child: Text(
-                    'Clear Search Context',
-                    style: TextStyle(fontSize: 20.0),
-                  ),
-                  color: Colors.blueAccent,
-                  textColor: Colors.white,
-                  onPressed: () {
-                    SearchUserJourney.getContext().clear();
-                  },
-                ),
-                Container(height: 16), // set height
-                Flexible(
-                    child: FractionallySizedBox(
-                        widthFactor: 0.9,
-                        heightFactor: 0.98,
-                        child: SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            child: Container(
-                              height: MediaQuery.of(context).size.height,
-                              decoration: new BoxDecoration(
-                                shape: BoxShape.rectangle,
-                                color: Colors.black,
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Text(
-                                  '$_searchText\n',
-                                  style: TextStyle(
-                                      fontSize: 20.0,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white),
-                                ),
-                              ),
-                            ))))
-              ],
-            ))));
   }
 
   Future<void> _showMyDialog() async {
@@ -269,13 +306,19 @@ class _MyAppState extends State<MyApp>
   }
 
   @override
-  void onAssistantInitFailure(String description) {
-    print("onAssistantInitFailure " + description);
+  void onAssistantInitSuccess() {
+    print("onAssistantInitSuccess");
+    setState(() {
+      showScanQRButton = false;
+    });
   }
 
   @override
-  void onAssistantInitSuccess() {
-    print("onAssistantInitSuccess");
+  void onAssistantInitFailure(String description) {
+    print("onAssistantInitFailure " + description);
+    setState(() {
+      showScanQRButton = true;
+    });
   }
 
   @override
