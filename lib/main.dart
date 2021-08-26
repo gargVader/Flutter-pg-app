@@ -24,6 +24,7 @@ class _MyAppState extends State<MyApp>
   String API_KEY = "";
   String scanRes = "";
   bool? showScanQRButton;
+  bool showLoading = false;
 
   @override
   void initState() {
@@ -40,12 +41,14 @@ class _MyAppState extends State<MyApp>
       appBar: AppBar(
         title: const Text('Flutter Example App'),
       ),
-      body: showScanQRButton == null
-          // Still fetching info from sharedPref
+      body: showLoading
           ? circularProgress()
-          : (showScanQRButton == true)
-              ? scanQRButton()
-              : mainContent(),
+          : showScanQRButton == null
+              // Still fetching info from sharedPref
+              ? circularProgress()
+              : (showScanQRButton == true)
+                  ? scanQRButton()
+                  : mainContent(),
     ));
   }
 
@@ -158,6 +161,9 @@ class _MyAppState extends State<MyApp>
       ..apiKey = API_KEY;
 
     SlangRetailAssistant.initialize(assistantConfig);
+    setState(() {
+      showLoading = true;
+    });
     SlangRetailAssistant.setAction(this);
     SlangRetailAssistant.setLifecycleObserver(this);
   }
@@ -309,6 +315,7 @@ class _MyAppState extends State<MyApp>
   void onAssistantInitSuccess() {
     print("onAssistantInitSuccess");
     setState(() {
+      showLoading = false;
       showScanQRButton = false;
     });
   }
@@ -317,6 +324,7 @@ class _MyAppState extends State<MyApp>
   void onAssistantInitFailure(String description) {
     print("onAssistantInitFailure " + description);
     setState(() {
+      showLoading = false;
       showScanQRButton = true;
     });
   }
