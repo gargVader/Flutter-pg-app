@@ -223,7 +223,7 @@ packages:
       name: slang_retail_assistant
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "5.0.2"
+    version: "5.0.3"
   source_span:
     dependency: transitive
     description:

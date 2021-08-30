@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:flutter_pg_app/Data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:slang_retail_assistant/slang_retail_assistant.dart';
 
@@ -24,49 +25,80 @@ class _MyAppState extends State<MyApp>
   String API_KEY = "";
   String scanRes = "";
   bool? showScanQRButton;
-  bool showLoading = false;
+  // bool showLoading = false;
 
   @override
   void initState() {
     super.initState();
-    getIsFirstScan();
+    getShowScanQrButton();
     initSlangRetailAssistant();
   }
 
   @override
   Widget build(BuildContext context) {
     SlangRetailAssistant.getUI().showTrigger();
+    print('Build function called. showLoading='+Data.instance.showLoading.toString());
     return MaterialApp(
         home: Scaffold(
       appBar: AppBar(
-        title: const Text('Flutter Example App'),
+        title: const Text('Slang CONVA Playground'),
       ),
-      body: showLoading
-          ? circularProgress()
-          : showScanQRButton == null
-              // Still fetching info from sharedPref
-              ? circularProgress()
-              : (showScanQRButton == true)
-                  ? scanQRButton()
-                  : mainContent(),
+      body: Data.instance.showLoading
+          ? Center(
+              child: CircularProgressIndicator(),
+            )
+          : (showScanQRButton!=null && showScanQRButton == true)
+              ? scanQRButton()
+              : mainContent(),
     ));
   }
 
   Widget scanQRButton() {
-    return Center(
-      child: FlatButton(
-        minWidth: 50.0,
-        height: 50.0,
-        child: Text(
-          'Scan QR Code',
-          style: TextStyle(fontSize: 20.0),
-        ),
-        color: Colors.blueAccent,
-        textColor: Colors.white,
-        onPressed: () {
-          scanQR();
-        },
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Column(
+          children: [
+            SizedBox(
+              height: constraints.maxHeight * 0.1,
+            ),
+            Container(
+                margin: EdgeInsets.symmetric(vertical: 10),
+                child: Image.asset(
+                  'assets/logo.png',
+                  fit: BoxFit.cover,
+                )),
+            Container(
+              margin: EdgeInsets.symmetric(vertical: 10),
+              child: Text(
+                'Welcome to Slang CONVA developer playground app',
+                style: TextStyle(fontSize: 20.0),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            Container(
+              margin: EdgeInsets.symmetric(vertical: 10),
+              child: Text(
+                'Please scan the QR code from your Slang Console to get started',
+                style: TextStyle(fontSize: 15.0, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            FlatButton(
+              minWidth: 50.0,
+              height: 50.0,
+              child: Text(
+                'Scan Retail Assistant QR code',
+                style: TextStyle(fontSize: 20.0),
+              ),
+              color: Colors.blueAccent,
+              textColor: Colors.white,
+              onPressed: () {
+                scanQR();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -153,8 +185,12 @@ class _MyAppState extends State<MyApp>
 
   void initSlangRetailAssistant() async {
     final prefs = await SharedPreferences.getInstance();
-    ASSISTANT_ID = prefs.getString('ASSISTANT_ID') ?? "x";
-    API_KEY = prefs.getString('API_KEY') ?? "x";
+    ASSISTANT_ID = prefs.getString('ASSISTANT_ID') ?? "from_girish_pls inform_if_still_receiving_req";
+    API_KEY = prefs.getString('API_KEY') ?? "from_girish_pls inform_if_still_receiving_req";
+
+    if(ASSISTANT_ID=='from_girish_pls inform_if_still_receiving_req'){
+      onAssistantInitFailure("No keys present in shared pref");
+    }
 
     var assistantConfig = new AssistantConfiguration()
       ..assistantId = ASSISTANT_ID
@@ -162,7 +198,8 @@ class _MyAppState extends State<MyApp>
 
     SlangRetailAssistant.initialize(assistantConfig);
     setState(() {
-      showLoading = true;
+      // Data.instance.setShowLoading(true);
+      Data.instance.showLoading= true;
     });
     SlangRetailAssistant.setAction(this);
     SlangRetailAssistant.setLifecycleObserver(this);
@@ -173,7 +210,7 @@ class _MyAppState extends State<MyApp>
     print("AssistantError " + assistantError.toString());
   }
 
-  Future<bool> getIsFirstScan() async {
+  Future<bool> getShowScanQrButton() async {
     final prefs = await SharedPreferences.getInstance();
     bool status = (prefs.getString('ASSISTANT_ID') == null);
     setState(() {
@@ -207,9 +244,6 @@ class _MyAppState extends State<MyApp>
       barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
           '#ff6666', 'Cancel', true, ScanMode.QR);
       print(barcodeScanRes);
-      // setState(() {
-      //   showLoading = true;
-      // });
     } on PlatformException {
       barcodeScanRes = 'Failed to get platform version.';
     }
@@ -315,7 +349,8 @@ class _MyAppState extends State<MyApp>
   void onAssistantInitSuccess() {
     print("onAssistantInitSuccess");
     setState(() {
-      showLoading = false;
+      // showLoading = false;
+      Data.instance.showLoading = false;
       showScanQRButton = false;
     });
   }
@@ -324,7 +359,8 @@ class _MyAppState extends State<MyApp>
   void onAssistantInitFailure(String description) {
     print("onAssistantInitFailure " + description);
     setState(() {
-      showLoading = false;
+      // showLoading = false;
+      // Data.instance.showLoading = false;
       showScanQRButton = true;
     });
   }
