@@ -19,13 +19,13 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp>
     implements RetailAssistantAction, RetailAssistantLifeCycleObserver {
-  String _searchText = '';
   late SearchUserJourney _searchUserJourney;
+  String _searchText = '';
   String ASSISTANT_ID = "";
   String API_KEY = "";
   String scanRes = "";
+  // Tells whether scanQRButton/main content should be shown
   bool? showScanQRButton;
-  // bool showLoading = false;
 
   @override
   void initState() {
@@ -99,12 +99,6 @@ class _MyAppState extends State<MyApp>
           ],
         );
       },
-    );
-  }
-
-  Widget circularProgress() {
-    return Center(
-      child: CircularProgressIndicator(),
     );
   }
 
@@ -190,6 +184,7 @@ class _MyAppState extends State<MyApp>
 
     if(ASSISTANT_ID=='from_girish_pls inform_if_still_receiving_req'){
       onAssistantInitFailure("No keys present in shared pref");
+      return;
     }
 
     var assistantConfig = new AssistantConfiguration()
@@ -198,7 +193,7 @@ class _MyAppState extends State<MyApp>
 
     SlangRetailAssistant.initialize(assistantConfig);
     setState(() {
-      // Data.instance.setShowLoading(true);
+      print('Setting showLoading=true as slang init called');
       Data.instance.showLoading= true;
     });
     SlangRetailAssistant.setAction(this);
@@ -210,10 +205,12 @@ class _MyAppState extends State<MyApp>
     print("AssistantError " + assistantError.toString());
   }
 
+  // Checks whether sharedPref contains keys or not
   Future<bool> getShowScanQrButton() async {
     final prefs = await SharedPreferences.getInstance();
     bool status = (prefs.getString('ASSISTANT_ID') == null);
     setState(() {
+      // If no keys are present then I must show scanQRButton
       showScanQRButton = status;
     });
     return status;
@@ -349,8 +346,9 @@ class _MyAppState extends State<MyApp>
   void onAssistantInitSuccess() {
     print("onAssistantInitSuccess");
     setState(() {
-      // showLoading = false;
+      print('Setting showLoading=false as init success');
       Data.instance.showLoading = false;
+      // Since init is successful, then I can proceed to main content
       showScanQRButton = false;
     });
   }
@@ -359,8 +357,9 @@ class _MyAppState extends State<MyApp>
   void onAssistantInitFailure(String description) {
     print("onAssistantInitFailure " + description);
     setState(() {
-      // showLoading = false;
-      // Data.instance.showLoading = false;
+      print('Setting showLoading=false as init failure');
+      Data.instance.showLoading = false;
+      // Since init has failed, then I should again show scanQRButton
       showScanQRButton = true;
     });
   }
@@ -400,7 +399,3 @@ class _MyAppState extends State<MyApp>
     print("onMicPermissionDenied");
   }
 }
-
-class UserCanceled {}
-
-class QRViewExample {}
