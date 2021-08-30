@@ -30,6 +30,7 @@ class _MyAppState extends State<MyApp>
   @override
   void initState() {
     super.initState();
+    print('initState called');
     getShowScanQrButton();
     initSlangRetailAssistant();
   }
@@ -178,6 +179,7 @@ class _MyAppState extends State<MyApp>
   }
 
   void initSlangRetailAssistant() async {
+    print('init slang called');
     final prefs = await SharedPreferences.getInstance();
     ASSISTANT_ID = prefs.getString('ASSISTANT_ID') ?? "from_girish_pls inform_if_still_receiving_req";
     API_KEY = prefs.getString('API_KEY') ?? "from_girish_pls inform_if_still_receiving_req";
@@ -192,10 +194,14 @@ class _MyAppState extends State<MyApp>
       ..apiKey = API_KEY;
 
     SlangRetailAssistant.initialize(assistantConfig);
-    setState(() {
-      print('Setting showLoading=true as slang init called');
-      Data.instance.showLoading= true;
-    });
+    if(showScanQRButton==false){
+
+    }else{
+      // setState(() {
+      //   // print('Setting showLoading=true as slang init called');
+      //   Data.instance.showLoading = true;
+      // });
+    }
     SlangRetailAssistant.setAction(this);
     SlangRetailAssistant.setLifecycleObserver(this);
   }
