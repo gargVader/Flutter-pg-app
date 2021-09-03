@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
-import 'package:flutter_pg_app/Data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:slang_retail_assistant/slang_retail_assistant.dart';
 
@@ -24,31 +23,49 @@ class _MyAppState extends State<MyApp>
   String ASSISTANT_ID = "";
   String API_KEY = "";
   String scanRes = "";
+
   // Tells whether scanQRButton/main content should be shown
   bool? showScanQRButton;
+  bool showLoading = true;
 
   @override
   void initState() {
     super.initState();
     print('initState called');
+    _getShowLoading();
     getShowScanQrButton();
     initSlangRetailAssistant();
+  }
+
+  void _getShowLoading() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      showLoading = prefs.getBool('showLoading') ?? true;
+    });
+  }
+
+  void _setShowLoading(bool status) async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      showLoading = status;
+    });
+    prefs.setBool('showLoading', status);
   }
 
   @override
   Widget build(BuildContext context) {
     SlangRetailAssistant.getUI().showTrigger();
-    print('Build function called. showLoading='+Data.instance.showLoading.toString());
+    print('Build function called. showLoading=' + showLoading.toString());
     return MaterialApp(
         home: Scaffold(
       appBar: AppBar(
         title: const Text('Slang CONVA Playground'),
       ),
-      body: Data.instance.showLoading
+      body: showLoading
           ? Center(
               child: CircularProgressIndicator(),
             )
-          : (showScanQRButton!=null && showScanQRButton == true)
+          : (showScanQRButton != null && showScanQRButton == true)
               ? scanQRButton()
               : mainContent(),
     ));
@@ -181,10 +198,12 @@ class _MyAppState extends State<MyApp>
   void initSlangRetailAssistant() async {
     print('init slang called');
     final prefs = await SharedPreferences.getInstance();
-    ASSISTANT_ID = prefs.getString('ASSISTANT_ID') ?? "from_girish_pls inform_if_still_receiving_req";
-    API_KEY = prefs.getString('API_KEY') ?? "from_girish_pls inform_if_still_receiving_req";
+    ASSISTANT_ID = prefs.getString('ASSISTANT_ID') ??
+        "from_girish_pls inform_if_still_receiving_req";
+    API_KEY = prefs.getString('API_KEY') ??
+        "from_girish_pls inform_if_still_receiving_req";
 
-    if(ASSISTANT_ID=='from_girish_pls inform_if_still_receiving_req'){
+    if (ASSISTANT_ID == 'from_girish_pls inform_if_still_receiving_req') {
       onAssistantInitFailure("No keys present in shared pref");
       return;
     }
@@ -194,11 +213,11 @@ class _MyAppState extends State<MyApp>
       ..apiKey = API_KEY;
 
     SlangRetailAssistant.initialize(assistantConfig);
-    if(showScanQRButton==false){
-
-    }else{
+    if (showScanQRButton == false) {
+    } else {
+      print('Setting showLoading=true as slang init called');
+      _setShowLoading(true);
       // setState(() {
-      //   // print('Setting showLoading=true as slang init called');
       //   Data.instance.showLoading = true;
       // });
     }
@@ -353,7 +372,8 @@ class _MyAppState extends State<MyApp>
     print("onAssistantInitSuccess");
     setState(() {
       print('Setting showLoading=false as init success');
-      Data.instance.showLoading = false;
+      // Data.instance.showLoading = false;
+      _setShowLoading(false);
       // Since init is successful, then I can proceed to main content
       showScanQRButton = false;
     });
@@ -364,7 +384,8 @@ class _MyAppState extends State<MyApp>
     print("onAssistantInitFailure " + description);
     setState(() {
       print('Setting showLoading=false as init failure');
-      Data.instance.showLoading = false;
+      // Data.instance.showLoading = false;
+      _setShowLoading(false);
       // Since init has failed, then I should again show scanQRButton
       showScanQRButton = true;
     });
